@@ -1,86 +1,69 @@
-import React from 'react';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import { MdAddShoppingCart } from 'react-icons/md';
-
+import { formatPrice } from '../../util/format';
+import api from '../../services/api';
+import * as CartActions from '../../store/modules/cart/actions';
 import { ProductList } from './styles';
 
-export default function Home() {
-  return (
-    <ProductList>
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/mochila-oakley-icon-pack-40-militar/60/D63-5550-060/D63-5550-060_detalhe2.jpg?ims=326x"
-          alt="Mochila Oakley"
-        />
-        <strong>Mochila Oakley</strong>
-        <span>R$ 559,90</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#FFF" /> 3
-          </div>
+class Home extends Component {
+  state = {
+    products: [],
+  };
 
-          <span>Add on cart</span>
-        </button>
-      </li>
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/mochila-oakley-icon-pack-40-militar/60/D63-5550-060/D63-5550-060_detalhe2.jpg?ims=326x"
-          alt="Mochila Oakley"
-        />
-        <strong>Mochila Oakley</strong>
-        <span>R$ 559,90</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#FFF" /> 3
-          </div>
+  async componentDidMount() {
+    const response = await api.get('products');
 
-          <span>Add on cart</span>
-        </button>
-      </li>
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/mochila-oakley-icon-pack-40-militar/60/D63-5550-060/D63-5550-060_detalhe2.jpg?ims=326x"
-          alt="Mochila Oakley"
-        />
-        <strong>Mochila Oakley</strong>
-        <span>R$ 559,90</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#FFF" /> 3
-          </div>
+    const data = response.data.map(product => ({
+      ...product,
+      priceFormated: formatPrice(product.price),
+    }));
+    this.setState({ products: data });
+  }
 
-          <span>Add on cart</span>
-        </button>
-      </li>
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/mochila-oakley-icon-pack-40-militar/60/D63-5550-060/D63-5550-060_detalhe2.jpg?ims=326x"
-          alt="Mochila Oakley"
-        />
-        <strong>Mochila Oakley</strong>
-        <span>R$ 559,90</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#FFF" /> 3
-          </div>
+  handleAddProduct = product => {
+    const { addToCart } = this.props;
 
-          <span>Add on cart</span>
-        </button>
-      </li>
-      <li>
-        <img
-          src="https://static.netshoes.com.br/produtos/mochila-oakley-icon-pack-40-militar/60/D63-5550-060/D63-5550-060_detalhe2.jpg?ims=326x"
-          alt="Mochila Oakley"
-        />
-        <strong>Mochila Oakley</strong>
-        <span>R$ 559,90</span>
-        <button type="button">
-          <div>
-            <MdAddShoppingCart size={16} color="#FFF" /> 3
-          </div>
+    addToCart(product);
+  };
 
-          <span>Add on cart</span>
-        </button>
-      </li>
-    </ProductList>
-  );
+  render() {
+    const { products } = this.state;
+    const { amount } = this.props;
+    return (
+      <ProductList>
+        {products.map(product => (
+          <li key={product.id}>
+            <img src={product.image} alt={product.title} />
+            <strong>{product.title}</strong>
+            <span>{product.priceFormated}</span>
+            <button
+              type="button"
+              onClick={() => this.handleAddProduct(product)}
+            >
+              <div>
+                <MdAddShoppingCart size={16} color="#FFF" />
+                {amount[product.id] || 0}
+              </div>
+
+              <span>Add cart</span>
+            </button>
+          </li>
+        ))}
+      </ProductList>
+    );
+  }
 }
+
+const mapStateToProps = state => ({
+  amount: state.cart.reduce((amount, product) => {
+    amount[product.id] = product.amount;
+
+    return amount;
+  }, {}),
+});
+const mapDispatchToProps = dispatch =>
+  bindActionCreators(CartActions, dispatch);
+
+export default connect(mapStateToProps, mapDispatchToProps)(Home);
